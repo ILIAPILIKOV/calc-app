@@ -316,7 +316,17 @@ elif st.session_state.step == 4:
                     prod_list = ans.get('product', [])
                     prod_str = ", ".join(prod_list) if prod_list else "Не указано"
                     
-                    mail_body = f"НОВАЯ ЗАЯВКА ИЗ КОНСТРУКТОРА КАМЕР\n\n--- КОНТАКТЫ ---\nИмя/Компания: {f_name}\nТелефон: {f_phone}\nEmail: {f_email}\nГород: {f_city}\n\n--- ДАННЫЕ РАСЧЕТА ---\nНазначение: {prod_str}\nГабариты (ВхДхШ): {ans.get('h')}x{ans.get('l')}x{ans.get('w')} м\nТолщина: {ans.get('thick')} мм\nПол: {ans.get('floor')}\n\n--- КОММЕНТАРИЙ ---\n{f_comment if f_comment else 'Нет комментариев'}"
+                    # Собираем данные из предложенных карточек
+                    variants_mail = ""
+                    v_titles = ["ЭКОНОМ", "ОПТИМАЛЬНО", "КОМФОРТ"]
+                    for idx, v_row in enumerate([rEco, rOpt, rPre]):
+                        if not v_row.empty:
+                            v_price = f"{int(v_row['Price_RRC'].values[0]):,}".replace(",", " ")
+                            variants_mail += f"{v_titles[idx]}:\nГабариты: {v_row['Height_Ext'].values[0]:.2f} x {v_row['Length_Ext'].values[0]:.2f} x {v_row['Width_Ext'].values[0]:.2f} м | Объем: {v_row['Volume_Intermal'].values[0]:.2f} м³ | РРЦ: {v_price} руб.\n\n"
+                        else:
+                            variants_mail += f"{v_titles[idx]}: Вариант не найден\n\n"
+                    
+                    mail_body = f"НОВАЯ ЗАЯВКА ИЗ КОНСТРУКТОРА КАМЕР\n\n--- КОНТАКТЫ ---\nИмя/Компания: {f_name}\nТелефон: {f_phone}\nEmail: {f_email}\nГород: {f_city}\n\n--- ЗАПРОС КЛИЕНТА ---\nНазначение: {prod_str}\nЗапрошенные габариты: {ans.get('h')} x {ans.get('l')} x {ans.get('w')} м\nТолщина: {ans.get('thick')} мм\nПол: {ans.get('floor')}\n\n--- ПРЕДЛОЖЕННЫЕ АВТОМАТОМ ВАРИАНТЫ ---\n{variants_mail}--- КОММЕНТАРИЙ ---\n{f_comment if f_comment else 'Нет комментариев'}"
                     
                     msg = MIMEMultipart()
                     msg['Subject'] = f"🔔 Заявка Ариада (Конструктор): {f_name} ({f_city})"
