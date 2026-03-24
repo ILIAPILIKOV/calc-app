@@ -110,11 +110,11 @@ elif st.session_state.step == 2:
     
     col_inputs = st.columns(3)
     with col_inputs[0]:
-        st.session_state.answers['h'] = st.number_input("Высота (м)", value=st.session_state.answers.get('h', 2.20), step=0.01, format="%.2f", help="Точность до 1 см")
+        st.session_state.answers['h'] = st.number_input("Высота (м)", value=st.session_state.answers.get('h', 2.20), step=0.10, format="%.2f")
     with col_inputs[1]:
-        st.session_state.answers['l'] = st.number_input("Длина (м)", value=st.session_state.answers.get('l', 2.00), step=0.01, format="%.2f")
+        st.session_state.answers['l'] = st.number_input("Длина (м)", value=st.session_state.answers.get('l', 2.00), step=0.10, format="%.2f")
     with col_inputs[2]:
-        st.session_state.answers['w'] = st.number_input("Ширина (м)", value=st.session_state.answers.get('w', 2.00), step=0.01, format="%.2f")
+        st.session_state.answers['w'] = st.number_input("Ширина (м)", value=st.session_state.answers.get('w', 2.00), step=0.10, format="%.2f")
         
     st.write("")
     c1, c2 = st.columns(2)
@@ -206,7 +206,9 @@ elif st.session_state.step == 4:
         for i, row in enumerate([rEco, rOpt, rPre]):
             with cols_results[i]:
                 if not row.empty:
-                    # Обрати внимание: добавлен div с фиксированной высотой (45px) для заголовка
+                    # Замена запятой на пробел в цене
+                    price_str = f"{int(row['Price_RRC'].values[0]):,}".replace(",", " ")
+                    
                     st.markdown(f'''
                         <div class="option-card" style="background-color: {colors[i]};">
                             <div>
@@ -217,7 +219,7 @@ elif st.session_state.step == 4:
                                 <p style="margin: 15px 0; color: #555;">Полезный объем:<br><b style="font-size: 20px; color: #333;">{row['Volume_Intermal'].values[0]:.2f} м³</b></p>
                             </div>
                             <div>
-                                <div class="price-tag">{int(row['Price_RRC'].values[0]):,} ₽</div>
+                                <div class="price-tag">{price_str} ₽</div>
                                 <p style="font-size: 12px; color: #888; margin-top: 10px;">*Рекомендованная розница</p>
                             </div>
                         </div>
@@ -288,6 +290,9 @@ elif st.session_state.step == 4:
                     st.error("Пожалуйста, заполните все обязательные поля, отмеченные звездочкой (*). Город критичен для расчета логистики.")
 
         st.write("")
+        cb1, cb2 = st.columns(2)
+        with cb1: st.button("← Изменить параметры", type="secondary", on_click=prev_step, use_container_width=True)
+        with cb2: st.button("↺ Начать заново", type="secondary", on_click=restart, use_container_width=True)
         cb1, cb2 = st.columns(2)
         with cb1: st.button("← Изменить параметры", type="secondary", on_click=prev_step, use_container_width=True)
         with cb2: st.button("↺ Начать заново", type="secondary", on_click=restart, use_container_width=True)
