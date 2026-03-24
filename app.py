@@ -68,7 +68,6 @@ if 'step' not in st.session_state:
     st.session_state.step = 1
     st.session_state.answers = {}
     st.session_state.submitted = False
-    # Инициализация для синхронизации ползунков
     st.session_state.l_sl = 2.00
     st.session_state.l_num = 2.00
     st.session_state.w_sl = 2.00
@@ -112,7 +111,6 @@ if st.session_state.step == 1:
         current_prod = [current_prod]
         
     selected_products = []
-    # Выводим чекбоксы для каждого варианта
     for prod in products:
         if st.checkbox(prod, value=(prod in current_prod)):
             selected_products.append(prod)
@@ -137,7 +135,6 @@ elif st.session_state.step == 2:
     st.session_state.answers['h'] = st.selectbox("Высота (м)", available_heights, index=available_heights.index(current_h))
     st.write("---")
     
-    # Функции синхронизации ползунков и полей ввода
     def sync_l_to_num(): st.session_state.l_num = st.session_state.l_sl
     def sync_l_to_sl(): st.session_state.l_sl = st.session_state.l_num
     def sync_w_to_num(): st.session_state.w_num = st.session_state.w_sl
@@ -145,15 +142,14 @@ elif st.session_state.step == 2:
 
     st.write("**Длина (м)**")
     cl1, cl2 = st.columns([3, 1])
-    with cl1: st.slider("Длина", min_value=1.00, max_value=5.60, step=0.01, key="l_sl", on_change=sync_l_to_num, label_visibility="collapsed")
-    with cl2: st.number_input("Длина_ввод", min_value=1.00, max_value=10.00, step=0.01, key="l_num", on_change=sync_l_to_sl, label_visibility="collapsed")
+    with cl1: st.slider("Длина", min_value=1.00, max_value=5.60, step=0.10, key="l_sl", on_change=sync_l_to_num, label_visibility="collapsed")
+    with cl2: st.number_input("Длина_ввод", min_value=1.00, max_value=5.60, step=0.10, key="l_num", on_change=sync_l_to_sl, label_visibility="collapsed")
     
     st.write("**Ширина (м)**")
     cw1, cw2 = st.columns([3, 1])
-    with cw1: st.slider("Ширина", min_value=1.00, max_value=10.00, step=0.01, key="w_sl", on_change=sync_w_to_num, label_visibility="collapsed")
-    with cw2: st.number_input("Ширина_ввод", min_value=1.00, max_value=10.00, step=0.01, key="w_num", on_change=sync_w_to_sl, label_visibility="collapsed")
+    with cw1: st.slider("Ширина", min_value=1.00, max_value=10.00, step=0.10, key="w_sl", on_change=sync_w_to_num, label_visibility="collapsed")
+    with cw2: st.number_input("Ширина_ввод", min_value=1.00, max_value=10.00, step=0.10, key="w_num", on_change=sync_w_to_sl, label_visibility="collapsed")
     
-    # Сохраняем финальные значения
     st.session_state.answers['l'] = st.session_state.l_num
     st.session_state.answers['w'] = st.session_state.w_num
         
@@ -261,24 +257,31 @@ elif st.session_state.step == 4:
                     price_str = f"{int(row['Price_RRC'].values[0]):,}".replace(",", " ")
                     
                     st.markdown(f'''
-                        <div class="option-card" style="background-color: {colors[i]};">
-                            <div>
-                                <div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
-                                    <h3 style="color: #333; margin:0; line-height: 1.1;">{titles[i]}</h3>
+                        <a href="#order-form" style="text-decoration: none; display: block; color: inherit;">
+                            <div class="option-card" style="background-color: {colors[i]};">
+                                <div>
+                                    <div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
+                                        <h3 style="color: #333; margin:0; line-height: 1.1;">{titles[i]}</h3>
+                                    </div>
+                                    <div class="dim-tag">{row['Height_Ext'].values[0]:.2f} x {row['Length_Ext'].values[0]:.2f} x {row['Width_Ext'].values[0]:.2f} м</div>
+                                    <p style="margin: 15px 0; color: #555;">Полезный объем:<br><b style="font-size: 20px; color: #333;">{row['Volume_Intermal'].values[0]:.2f} м³</b></p>
                                 </div>
-                                <div class="dim-tag">{row['Height_Ext'].values[0]:.2f} x {row['Length_Ext'].values[0]:.2f} x {row['Width_Ext'].values[0]:.2f} м</div>
-                                <p style="margin: 15px 0; color: #555;">Полезный объем:<br><b style="font-size: 20px; color: #333;">{row['Volume_Intermal'].values[0]:.2f} м³</b></p>
+                                <div>
+                                    <div class="price-tag">{price_str} ₽</div>
+                                    <p style="font-size: 12px; color: #888; margin-top: 10px;">*Рекомендованная розница</p>
+                                    <p style="font-size: 13px; color: #e65100; margin-top: 10px; font-weight: bold;">👇 Кликните, чтобы заполнить заявку</p>
+                                </div>
                             </div>
-                            <div>
-                                <div class="price-tag">{price_str} ₽</div>
-                                <p style="font-size: 12px; color: #888; margin-top: 10px;">*Рекомендованная розница</p>
-                            </div>
-                        </div>
+                        </a>
                     ''', unsafe_allow_html=True)
                 else:
                     st.markdown(f'<div class="option-card" style="background-color: {colors[i]}; opacity: 0.6;"><div><div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;"><h3 style="color: #333; margin:0;">{titles[i]}</h3></div></div><div><p style="color: #777;">Вариант не найден</p></div></div>', unsafe_allow_html=True)
 
         st.write("---")
+        
+        # Невидимый якорь, куда будет скроллить страница
+        st.markdown('<div id="order-form"></div>', unsafe_allow_html=True)
+        
         st.markdown("""
             <div style="background-color: #fff3e0; border-left: 10px solid #ff9800; padding: 25px; border-radius: 12px; margin: 10px 0 30px 0;">
                 <h3 style="color: #e65100; margin-top: 0; font-size: 22px;">💰 Хотите цену ниже РРЦ?</h3>
@@ -298,6 +301,7 @@ elif st.session_state.step == 4:
                 f_city = st.text_input("Город поставки*", placeholder="Нижний Новгород")
             
             st.write("")
+            f_comment = st.text_area("Дополнительные комментарии или пожелания (необязательно)", placeholder="Например: нужен монтаж, особые требования к двери...")
             f_files = st.file_uploader("Прикрепить чертеж помещения или ТЗ (необязательно)", accept_multiple_files=True)
             st.write("")
             
@@ -312,7 +316,7 @@ elif st.session_state.step == 4:
                     prod_list = ans.get('product', [])
                     prod_str = ", ".join(prod_list) if prod_list else "Не указано"
                     
-                    mail_body = f"НОВАЯ ЗАЯВКА ИЗ КОНСТРУКТОРА КАМЕР\n\n--- КОНТАКТЫ ---\nИмя/Компания: {f_name}\nТелефон: {f_phone}\nEmail: {f_email}\nГород: {f_city}\n\n--- ДАННЫЕ РАСЧЕТА ---\nНазначение: {prod_str}\nГабариты (ВхДхШ): {ans.get('h')}x{ans.get('l')}x{ans.get('w')} м\nТолщина: {ans.get('thick')} мм\nПол: {ans.get('floor')}"
+                    mail_body = f"НОВАЯ ЗАЯВКА ИЗ КОНСТРУКТОРА КАМЕР\n\n--- КОНТАКТЫ ---\nИмя/Компания: {f_name}\nТелефон: {f_phone}\nEmail: {f_email}\nГород: {f_city}\n\n--- ДАННЫЕ РАСЧЕТА ---\nНазначение: {prod_str}\nГабариты (ВхДхШ): {ans.get('h')}x{ans.get('l')}x{ans.get('w')} м\nТолщина: {ans.get('thick')} мм\nПол: {ans.get('floor')}\n\n--- КОММЕНТАРИЙ ---\n{f_comment if f_comment else 'Нет комментариев'}"
                     
                     msg = MIMEMultipart()
                     msg['Subject'] = f"🔔 Заявка Ариада (Конструктор): {f_name} ({f_city})"
