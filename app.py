@@ -142,13 +142,13 @@ elif st.session_state.step == 2:
 
     st.write("**Длина (м)**")
     cl1, cl2 = st.columns([3, 1])
-    with cl1: st.slider("Длина", min_value=1.00, max_value=5.60, step=0.10, key="l_sl", on_change=sync_l_to_num, label_visibility="collapsed")
-    with cl2: st.number_input("Длина_ввод", min_value=1.00, max_value=5.60, step=0.10, key="l_num", on_change=sync_l_to_sl, label_visibility="collapsed")
+    with cl1: st.slider("Длина", min_value=1.00, max_value=5.60, step=0.01, key="l_sl", on_change=sync_l_to_num, label_visibility="collapsed")
+    with cl2: st.number_input("Длина_ввод", min_value=1.00, max_value=5.60, step=0.01, key="l_num", on_change=sync_l_to_sl, label_visibility="collapsed")
     
     st.write("**Ширина (м)**")
     cw1, cw2 = st.columns([3, 1])
-    with cw1: st.slider("Ширина", min_value=1.00, max_value=10.00, step=0.10, key="w_sl", on_change=sync_w_to_num, label_visibility="collapsed")
-    with cw2: st.number_input("Ширина_ввод", min_value=1.00, max_value=10.00, step=0.10, key="w_num", on_change=sync_w_to_sl, label_visibility="collapsed")
+    with cw1: st.slider("Ширина", min_value=1.00, max_value=10.00, step=0.01, key="w_sl", on_change=sync_w_to_num, label_visibility="collapsed")
+    with cw2: st.number_input("Ширина_ввод", min_value=1.00, max_value=10.00, step=0.01, key="w_num", on_change=sync_w_to_sl, label_visibility="collapsed")
     
     st.session_state.answers['l'] = st.session_state.l_num
     st.session_state.answers['w'] = st.session_state.w_num
