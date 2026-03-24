@@ -108,7 +108,7 @@ elif st.session_state.step == 2:
     st.caption("Укажите точные габариты помещения в метрах")
     st.write("")
     
-   col_inputs = st.columns(3)
+col_inputs = st.columns(3)
     with col_inputs[0]:
         st.session_state.answers['h'] = round(st.number_input("Высота (м)", value=st.session_state.answers.get('h', 2.20), step=0.10, format="%.2f"), 2)
     with col_inputs[1]:
