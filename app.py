@@ -58,7 +58,7 @@ def load_data():
 
 df = load_data()
 if df is None:
-    st.error("Критическая ошибка: Файл базы данных base.csv не найден. Пожалуйста, убедитесь, что он находится в той же папке, что и скрипт.")
+    st.error("Критическая ошибка: Файл базы данных base.csv не найден.")
     st.stop()
 
 # --- УПРАВЛЕНИЕ СОСТОЯНИЕМ КВИЗА ---
@@ -68,6 +68,11 @@ if 'step' not in st.session_state:
     st.session_state.step = 1
     st.session_state.answers = {}
     st.session_state.submitted = False
+    # Инициализация для синхронизации ползунков
+    st.session_state.l_sl = 2.00
+    st.session_state.l_num = 2.00
+    st.session_state.w_sl = 2.00
+    st.session_state.w_num = 2.00
 
 def next_step(): st.session_state.step += 1
 def prev_step(): st.session_state.step -= 1
@@ -75,6 +80,10 @@ def restart():
     st.session_state.step = 1
     st.session_state.answers = {}
     st.session_state.submitted = False
+    st.session_state.l_sl = 2.00
+    st.session_state.l_num = 2.00
+    st.session_state.w_sl = 2.00
+    st.session_state.w_num = 2.00
 
 def render_header(step_num, title):
     st.image("https://ariada.ru/templates/ariada/images/logo.png", width=180)
@@ -95,8 +104,20 @@ if st.session_state.step == 1:
     st.write("")
     
     products = ["Мясные продукты", "Рыбные продукты", "Молочная продукция", "Тесто, выпечка", "Фрукты, овощи", "Цветы", "Алкогольная продукция", "Полуфабрикаты", "Медикаменты", "Другое"]
-    default_prod = st.session_state.answers.get('product', products[0])
-    st.session_state.answers['product'] = st.radio("Выберите тип продукции:", products, index=products.index(default_prod))
+    
+    st.write("**Выберите тип продукции (можно несколько):**")
+    
+    current_prod = st.session_state.answers.get('product', [products[0]])
+    if not isinstance(current_prod, list):
+        current_prod = [current_prod]
+        
+    selected_products = []
+    # Выводим чекбоксы для каждого варианта
+    for prod in products:
+        if st.checkbox(prod, value=(prod in current_prod)):
+            selected_products.append(prod)
+            
+    st.session_state.answers['product'] = selected_products if selected_products else ["Не указано"]
     
     st.write("")
     st.button("Далее →", on_click=next_step, type="secondary", use_container_width=True)
@@ -108,13 +129,33 @@ elif st.session_state.step == 2:
     st.caption("Укажите точные габариты помещения в метрах")
     st.write("")
     
-col_inputs = st.columns(3)
-    with col_inputs[0]:
-        st.session_state.answers['h'] = round(st.number_input("Высота (м)", value=st.session_state.answers.get('h', 2.20), step=0.10, format="%.2f"), 2)
-    with col_inputs[1]:
-        st.session_state.answers['l'] = round(st.number_input("Длина (м)", value=st.session_state.answers.get('l', 2.00), step=0.10, format="%.2f"), 2)
-    with col_inputs[2]:
-        st.session_state.answers['w'] = round(st.number_input("Ширина (м)", value=st.session_state.answers.get('w', 2.00), step=0.10, format="%.2f"), 2)
+    available_heights = [2.20, 2.24, 2.46, 2.50, 2.72, 2.76]
+    current_h = st.session_state.answers.get('h', 2.20)
+    if current_h not in available_heights:
+        current_h = 2.20
+    
+    st.session_state.answers['h'] = st.selectbox("Высота (м)", available_heights, index=available_heights.index(current_h))
+    st.write("---")
+    
+    # Функции синхронизации ползунков и полей ввода
+    def sync_l_to_num(): st.session_state.l_num = st.session_state.l_sl
+    def sync_l_to_sl(): st.session_state.l_sl = st.session_state.l_num
+    def sync_w_to_num(): st.session_state.w_num = st.session_state.w_sl
+    def sync_w_to_sl(): st.session_state.w_sl = st.session_state.w_num
+
+    st.write("**Длина (м)**")
+    cl1, cl2 = st.columns([3, 1])
+    with cl1: st.slider("Длина", min_value=1.00, max_value=5.60, step=0.01, key="l_sl", on_change=sync_l_to_num, label_visibility="collapsed")
+    with cl2: st.number_input("Длина_ввод", min_value=1.00, max_value=10.00, step=0.01, key="l_num", on_change=sync_l_to_sl, label_visibility="collapsed")
+    
+    st.write("**Ширина (м)**")
+    cw1, cw2 = st.columns([3, 1])
+    with cw1: st.slider("Ширина", min_value=1.00, max_value=10.00, step=0.01, key="w_sl", on_change=sync_w_to_num, label_visibility="collapsed")
+    with cw2: st.number_input("Ширина_ввод", min_value=1.00, max_value=10.00, step=0.01, key="w_num", on_change=sync_w_to_sl, label_visibility="collapsed")
+    
+    # Сохраняем финальные значения
+    st.session_state.answers['l'] = st.session_state.l_num
+    st.session_state.answers['w'] = st.session_state.w_num
         
     st.write("")
     c1, c2 = st.columns(2)
@@ -178,24 +219,35 @@ elif st.session_state.step == 4:
             st.stop()
 
         all_heights = subset_by_thick['Height_Ext'].unique()
-        nearest_h = all_heights[(np.abs(all_heights - uH)).argmin()]
+        if len(all_heights) > 0:
+            nearest_h = all_heights[(np.abs(all_heights - uH)).argmin()]
+        else:
+            nearest_h = uH
+            
         final_subset = subset_by_thick[subset_by_thick['Height_Ext'] == nearest_h].copy()
         
-        def fits(row, l, w): return (row['Length_Ext'] >= l and row['Width_Ext'] >= w) or (row['Length_Ext'] >= w and row['Width_Ext'] >= l)
-        def is_smaller(row, l, w): return (row['Length_Ext'] <= l and row['Width_Ext'] <= w) or (row['Length_Ext'] <= w and row['Width_Ext'] <= l)
+        user_min, user_max = min(uL, uW), max(uL, uW)
+        final_subset['min_dim'] = final_subset[['Length_Ext', 'Width_Ext']].min(axis=1)
+        final_subset['max_dim'] = final_subset[['Length_Ext', 'Width_Ext']].max(axis=1)
+        final_subset['dim_diff'] = abs(final_subset['min_dim'] - user_min) + abs(final_subset['max_dim'] - user_max)
 
-        opt_choices = final_subset[final_subset.apply(lambda r: fits(r, uL, uW), axis=1)]
-        rOpt = opt_choices.sort_values(by='Volume_Intermal').head(1)
+        rOpt = final_subset.sort_values(by=['dim_diff', 'Volume_Intermal']).head(1)
 
-        eco_choices = final_subset[final_subset.apply(lambda r: is_smaller(r, uL, uW), axis=1)]
-        rEco = eco_choices.sort_values(by='Volume_Intermal', ascending=False).head(1)
-        if rEco.empty and not rOpt.empty: rEco = rOpt
+        rEco = pd.DataFrame()
+        rPre = pd.DataFrame()
 
         if not rOpt.empty:
-            vOpt = rOpt['Volume_Intermal'].values[0]
-            rPre = final_subset[final_subset['Volume_Intermal'] > vOpt].sort_values(by='Volume_Intermal').head(1)
-        else:
-            rPre = pd.DataFrame()
+            opt_vol = rOpt['Volume_Intermal'].values[0]
+            
+            eco_choices = final_subset[final_subset['Volume_Intermal'] < opt_vol]
+            if not eco_choices.empty:
+                rEco = eco_choices.sort_values(by='dim_diff').head(1)
+            else:
+                rEco = rOpt  
+                
+            pre_choices = final_subset[final_subset['Volume_Intermal'] > opt_vol]
+            if not pre_choices.empty:
+                rPre = pre_choices.sort_values(by='dim_diff').head(1)
 
         st.caption(f"Расчет выполнен для ближайшей стандартной высоты сэндвич-панели: {nearest_h:.2f} м")
         st.write("")
@@ -206,7 +258,6 @@ elif st.session_state.step == 4:
         for i, row in enumerate([rEco, rOpt, rPre]):
             with cols_results[i]:
                 if not row.empty:
-                    # Замена запятой на пробел в цене
                     price_str = f"{int(row['Price_RRC'].values[0]):,}".replace(",", " ")
                     
                     st.markdown(f'''
@@ -257,12 +308,16 @@ elif st.session_state.step == 4:
             if submit_final:
                 if f_name and f_email and f_phone and f_city:
                     ans = st.session_state.answers
-                    mail_body = f"НОВАЯ ЗАЯВКА ИЗ КОНСТРУКТОРА КАМЕР\n\n--- КОНТАКТЫ ---\nИмя/Компания: {f_name}\nТелефон: {f_phone}\nEmail: {f_email}\nГород: {f_city}\n\n--- ДАННЫЕ РАСЧЕТА ---\nНазначение: {ans.get('product')}\nГабариты (ВхДхШ): {ans.get('h')}x{ans.get('l')}x{ans.get('w')} м\nТолщина: {ans.get('thick')} мм\nПол: {ans.get('floor')}"
+                    
+                    prod_list = ans.get('product', [])
+                    prod_str = ", ".join(prod_list) if prod_list else "Не указано"
+                    
+                    mail_body = f"НОВАЯ ЗАЯВКА ИЗ КОНСТРУКТОРА КАМЕР\n\n--- КОНТАКТЫ ---\nИмя/Компания: {f_name}\nТелефон: {f_phone}\nEmail: {f_email}\nГород: {f_city}\n\n--- ДАННЫЕ РАСЧЕТА ---\nНазначение: {prod_str}\nГабариты (ВхДхШ): {ans.get('h')}x{ans.get('l')}x{ans.get('w')} м\nТолщина: {ans.get('thick')} мм\nПол: {ans.get('floor')}"
                     
                     msg = MIMEMultipart()
                     msg['Subject'] = f"🔔 Заявка Ариада (Конструктор): {f_name} ({f_city})"
                     sender_email = "marketing@ariada.ru" 
-                    sender_password = "czvtubzwvaztqtwy" # <--- СГЕНЕРИРУЙ НОВЫЙ В ЯНДЕКСЕ И ВСТАВЬ СЮДА
+                    sender_password = "czvtubzwvaztqtwy" # <--- ЯНДЕКС ПАРОЛЬ
                     
                     msg['From'] = sender_email
                     msg['To'] = "marketing@ariada.ru"
@@ -290,9 +345,6 @@ elif st.session_state.step == 4:
                     st.error("Пожалуйста, заполните все обязательные поля, отмеченные звездочкой (*). Город критичен для расчета логистики.")
 
         st.write("")
-        cb1, cb2 = st.columns(2)
-        with cb1: st.button("← Изменить параметры", type="secondary", on_click=prev_step, use_container_width=True)
-        with cb2: st.button("↺ Начать заново", type="secondary", on_click=restart, use_container_width=True)
         cb1, cb2 = st.columns(2)
         with cb1: st.button("← Изменить параметры", type="secondary", on_click=prev_step, use_container_width=True)
         with cb2: st.button("↺ Начать заново", type="secondary", on_click=restart, use_container_width=True)
