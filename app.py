@@ -25,8 +25,8 @@ st.markdown("""
     }
     .option-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
     
-    .price-tag { font-size: 28px; color: #d32f2f; font-weight: bold; margin-top: 10px; }
-    .dim-tag { font-size: 16px; font-weight: bold; color: #0055a5; background-color: #e3f2fd; padding: 5px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
+    .price-tag { font-size: 26px; color: #d32f2f; font-weight: bold; margin-top: 10px; }
+    .dim-tag { font-size: 15px; font-weight: bold; color: #0055a5; background-color: #e3f2fd; padding: 5px 10px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }
     
     button[kind="primary"] { 
         background-color: #ff5722 !important; color: white !important; 
@@ -70,6 +70,7 @@ if 'step' not in st.session_state:
     st.session_state.submitted = False
 
 def next_step(): st.session_state.step += 1
+def prev_step(): st.session_state.step -= 1
 def restart(): 
     st.session_state.step = 1
     st.session_state.answers = {}
@@ -98,7 +99,7 @@ if st.session_state.step == 1:
     st.session_state.answers['product'] = st.radio("Выберите тип продукции:", products, index=products.index(default_prod))
     
     st.write("")
-    st.button("Далее →", on_click=next_step, type="secondary")
+    st.button("Далее →", on_click=next_step, type="secondary", use_container_width=True)
 
 elif st.session_state.step == 2:
     render_header(2, "Укажите внешние размеры")
@@ -116,7 +117,9 @@ elif st.session_state.step == 2:
         st.session_state.answers['w'] = st.number_input("Ширина (м)", value=st.session_state.answers.get('w', 2.00), step=0.01, format="%.2f")
         
     st.write("")
-    st.button("Далее →", on_click=next_step, type="secondary")
+    c1, c2 = st.columns(2)
+    with c1: st.button("← Назад", on_click=prev_step, use_container_width=True)
+    with c2: st.button("Далее →", on_click=next_step, type="secondary", use_container_width=True)
 
 elif st.session_state.step == 3:
     render_header(3, "Технические предпочтения")
@@ -132,7 +135,9 @@ elif st.session_state.step == 3:
     st.session_state.answers['floor'] = st.radio("Нужны ли половые панели?", ["Да (Стандарт)", "Нет (Монтаж на существующий пол)"])
     
     st.write("")
-    st.button("Рассчитать варианты →", on_click=next_step, type="secondary")
+    c1, c2 = st.columns(2)
+    with c1: st.button("← Назад", on_click=prev_step, use_container_width=True)
+    with c2: st.button("Рассчитать варианты →", on_click=next_step, type="secondary", use_container_width=True)
 
 elif st.session_state.step == 4:
     
@@ -159,7 +164,7 @@ elif st.session_state.step == 4:
         st.write("")
         st.caption("* Обратите внимание: мы работаем через дилерскую сеть, прямая доставка заводом не осуществляется.")
         st.write("---")
-        st.button("↺ Рассчитать новую камеру", on_click=restart, type="secondary")
+        st.button("↺ Рассчитать новую камеру", on_click=restart, type="secondary", use_container_width=True)
     
     else:
         render_header(4, "Предварительные варианты")
@@ -201,10 +206,13 @@ elif st.session_state.step == 4:
         for i, row in enumerate([rEco, rOpt, rPre]):
             with cols_results[i]:
                 if not row.empty:
+                    # Обрати внимание: добавлен div с фиксированной высотой (45px) для заголовка
                     st.markdown(f'''
                         <div class="option-card" style="background-color: {colors[i]};">
                             <div>
-                                <h3 style="color: #333; margin-top:0;">{titles[i]}</h3>
+                                <div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
+                                    <h3 style="color: #333; margin:0; line-height: 1.1;">{titles[i]}</h3>
+                                </div>
                                 <div class="dim-tag">{row['Height_Ext'].values[0]:.2f} x {row['Length_Ext'].values[0]:.2f} x {row['Width_Ext'].values[0]:.2f} м</div>
                                 <p style="margin: 15px 0; color: #555;">Полезный объем:<br><b style="font-size: 20px; color: #333;">{row['Volume_Intermal'].values[0]:.2f} м³</b></p>
                             </div>
@@ -215,13 +223,13 @@ elif st.session_state.step == 4:
                         </div>
                     ''', unsafe_allow_html=True)
                 else:
-                    st.markdown(f'<div class="option-card" style="background-color: {colors[i]}; opacity: 0.6;"><div><h3 style="color: #333;">{titles[i]}</h3></div><div><p style="color: #777;">Вариант не найден</p></div></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="option-card" style="background-color: {colors[i]}; opacity: 0.6;"><div><div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;"><h3 style="color: #333; margin:0;">{titles[i]}</h3></div></div><div><p style="color: #777;">Вариант не найден</p></div></div>', unsafe_allow_html=True)
 
         st.write("---")
         st.markdown("""
             <div style="background-color: #fff3e0; border-left: 10px solid #ff9800; padding: 25px; border-radius: 12px; margin: 10px 0 30px 0;">
                 <h3 style="color: #e65100; margin-top: 0; font-size: 22px;">💰 Хотите цену ниже РРЦ?</h3>
-                <p style="font-size: 16px; color: #333; line-height: 1.5; margin-bottom: 0;">Указанные цены - базовые. Оставьте заявку ниже: инженер пересчитает смету с учетом <b>максимальной скидки завода</b> и подготовит официальное КП в течении рабочего дня.</p>
+                <p style="font-size: 16px; color: #333; line-height: 1.5; margin-bottom: 0;">Указанные цены - базовые. Оставьте заявку ниже: инженер пересчитает смету с учетом <b>максимальной скидки завода</b> и подготовит официальное КП за 15 минут.</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -252,7 +260,7 @@ elif st.session_state.step == 4:
                     msg = MIMEMultipart()
                     msg['Subject'] = f"🔔 Заявка Ариада (Конструктор): {f_name} ({f_city})"
                     sender_email = "marketing@ariada.ru" 
-                    sender_password = "czvtubzwvaztqtwy" # <--- ВПИШИ НОВЫЙ ПАРОЛЬ СЮДА
+                    sender_password = "czvtubzwvaztqtwy" # <--- СГЕНЕРИРУЙ НОВЫЙ В ЯНДЕКСЕ И ВСТАВЬ СЮДА
                     
                     msg['From'] = sender_email
                     msg['To'] = "marketing@ariada.ru"
@@ -280,4 +288,6 @@ elif st.session_state.step == 4:
                     st.error("Пожалуйста, заполните все обязательные поля, отмеченные звездочкой (*). Город критичен для расчета логистики.")
 
         st.write("")
-        st.button("↺ Начать расчет заново", type="secondary", on_click=restart)
+        cb1, cb2 = st.columns(2)
+        with cb1: st.button("← Изменить параметры", type="secondary", on_click=prev_step, use_container_width=True)
+        with cb2: st.button("↺ Начать заново", type="secondary", on_click=restart, use_container_width=True)
