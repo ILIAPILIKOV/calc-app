@@ -166,7 +166,20 @@ elif st.session_state.step == 3:
     st.write("")
     
     available_thicks = sorted(df['Thick'].unique().tolist())
-    st.session_state.answers['thick'] = st.selectbox("Толщина стенки панелей (мм):", available_thicks, help="Для среднетемпературных обычно 80мм, для низкотемпературных - 100мм")
+    
+    # Функция для красивого отображения вариантов в выпадающем списке
+    def format_thick(thick_val):
+        if thick_val == 80:
+            return "80 мм (рекомендуется для среднетемпературных камер)"
+        elif thick_val == 100:
+            return "100 мм (рекомендуется для низкотемпературных камер)"
+        return f"{thick_val} мм"
+
+    st.session_state.answers['thick'] = st.selectbox(
+        "Толщина стенки панелей:", 
+        available_thicks, 
+        format_func=format_thick
+    )
     
     st.write("")
     st.session_state.answers['floor'] = st.radio("Нужны ли половые панели?", ["Да (Стандарт)", "Нет (Монтаж на существующий пол)"])
