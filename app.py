@@ -116,6 +116,10 @@ if st.session_state.step == 1:
             selected_products.append(prod)
             
     st.session_state.answers['product'] = selected_products if selected_products else ["Не указано"]
+
+    # Маркетинговый триггер для цветов
+    if "Цветы" in st.session_state.answers['product']:
+        st.info("💡 Для цветочных камер мы рекомендуем установку стеклянного фронта. Наш инженер свяжется с вами для уточнения конфигурации остекления.")
     
     st.write("")
     st.button("Далее →", on_click=next_step, type="secondary", use_container_width=True)
@@ -135,23 +139,34 @@ elif st.session_state.step == 2:
     st.session_state.answers['h'] = st.selectbox("Высота (м)", available_heights, index=available_heights.index(current_h))
     st.write("---")
     
-    def sync_l_to_num(): st.session_state.l_num = st.session_state.l_sl
-    def sync_l_to_sl(): st.session_state.l_sl = st.session_state.l_num
-    def sync_w_to_num(): st.session_state.w_num = st.session_state.w_sl
-    def sync_w_to_sl(): st.session_state.w_sl = st.session_state.w_num
+    # Выбор нестандартной формы
+    st.write("**Форма помещения:**")
+    shape_type = st.radio("Форма", ["Прямоугольная (стандарт)", "Нестандартная (Г-образная, с выступами, по ТЗ)"], label_visibility="collapsed")
+    
+    st.session_state.answers['custom_shape'] = (shape_type == "Нестандартная (Г-образная, с выступами, по ТЗ)")
 
-    st.write("**Длина (м)**")
-    cl1, cl2 = st.columns([3, 1])
-    with cl1: st.slider("Длина", min_value=1.00, max_value=5.60, step=0.01, key="l_sl", on_change=sync_l_to_num, label_visibility="collapsed")
-    with cl2: st.number_input("Длина_ввод", min_value=1.00, max_value=5.60, step=0.01, key="l_num", on_change=sync_l_to_sl, label_visibility="collapsed")
-    
-    st.write("**Ширина (м)**")
-    cw1, cw2 = st.columns([3, 1])
-    with cw1: st.slider("Ширина", min_value=1.00, max_value=10.00, step=0.01, key="w_sl", on_change=sync_w_to_num, label_visibility="collapsed")
-    with cw2: st.number_input("Ширина_ввод", min_value=1.00, max_value=10.00, step=0.01, key="w_num", on_change=sync_w_to_sl, label_visibility="collapsed")
-    
-    st.session_state.answers['l'] = st.session_state.l_num
-    st.session_state.answers['w'] = st.session_state.w_num
+    if not st.session_state.answers['custom_shape']:
+        def sync_l_to_num(): st.session_state.l_num = st.session_state.l_sl
+        def sync_l_to_sl(): st.session_state.l_sl = st.session_state.l_num
+        def sync_w_to_num(): st.session_state.w_num = st.session_state.w_sl
+        def sync_w_to_sl(): st.session_state.w_sl = st.session_state.w_num
+
+        st.write("**Длина (м)**")
+        cl1, cl2 = st.columns([3, 1])
+        with cl1: st.slider("Длина", min_value=1.00, max_value=5.60, step=0.10, key="l_sl", on_change=sync_l_to_num, label_visibility="collapsed")
+        with cl2: st.number_input("Длина_ввод", min_value=1.00, max_value=5.60, step=0.10, key="l_num", on_change=sync_l_to_sl, label_visibility="collapsed")
+        
+        st.write("**Ширина (м)**")
+        cw1, cw2 = st.columns([3, 1])
+        with cw1: st.slider("Ширина", min_value=1.00, max_value=10.00, step=0.10, key="w_sl", on_change=sync_w_to_num, label_visibility="collapsed")
+        with cw2: st.number_input("Ширина_ввод", min_value=1.00, max_value=10.00, step=0.10, key="w_num", on_change=sync_w_to_sl, label_visibility="collapsed")
+        
+        st.session_state.answers['l'] = st.session_state.l_num
+        st.session_state.answers['w'] = st.session_state.w_num
+    else:
+        st.info("📐 Для расчета камеры сложной формы нам потребуется ваш чертеж или схема помещения. Вы сможете прикрепить файл на последнем шаге.")
+        st.session_state.answers['l'] = "По ТЗ"
+        st.session_state.answers['w'] = "По ТЗ"
         
     st.write("")
     c1, c2 = st.columns(2)
@@ -167,19 +182,12 @@ elif st.session_state.step == 3:
     
     available_thicks = sorted(df['Thick'].unique().tolist())
     
-    # Функция для красивого отображения вариантов в выпадающем списке
     def format_thick(thick_val):
-        if thick_val == 80:
-            return "80 мм (рекомендуется для среднетемпературных камер)"
-        elif thick_val == 100:
-            return "100 мм (рекомендуется для низкотемпературных камер)"
+        if thick_val == 80: return "80 мм (рекомендуется для среднетемпературных)"
+        elif thick_val == 100: return "100 мм (рекомендуется для низкотемпературных)"
         return f"{thick_val} мм"
 
-    st.session_state.answers['thick'] = st.selectbox(
-        "Толщина стенки панелей:", 
-        available_thicks, 
-        format_func=format_thick
-    )
+    st.session_state.answers['thick'] = st.selectbox("Толщина стенки панелей:", available_thicks, format_func=format_thick)
     
     st.write("")
     st.session_state.answers['floor'] = st.radio("Нужны ли половые панели?", ["Да (Стандарт)", "Нет (Монтаж на существующий пол)"])
@@ -219,86 +227,91 @@ elif st.session_state.step == 4:
     else:
         render_header(4, "Предварительные варианты")
         
-        uT, uH, uL, uW = st.session_state.answers['thick'], st.session_state.answers['h'], st.session_state.answers['l'], st.session_state.answers['w']
+        is_custom = st.session_state.answers.get('custom_shape', False)
         
-        subset_by_thick = df[df['Thick'] == uT]
-        if subset_by_thick.empty:
-            st.warning("В базе данных нет камер с выбранной толщиной панели.")
-            st.button("Начать сначала", on_click=restart)
-            st.stop()
+        rEco, rOpt, rPre = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
-        all_heights = subset_by_thick['Height_Ext'].unique()
-        if len(all_heights) > 0:
-            nearest_h = all_heights[(np.abs(all_heights - uH)).argmin()]
-        else:
-            nearest_h = uH
+        if not is_custom:
+            uT, uH, uL, uW = st.session_state.answers['thick'], st.session_state.answers['h'], st.session_state.answers['l'], st.session_state.answers['w']
             
-        final_subset = subset_by_thick[subset_by_thick['Height_Ext'] == nearest_h].copy()
-        
-        user_min, user_max = min(uL, uW), max(uL, uW)
-        final_subset['min_dim'] = final_subset[['Length_Ext', 'Width_Ext']].min(axis=1)
-        final_subset['max_dim'] = final_subset[['Length_Ext', 'Width_Ext']].max(axis=1)
-        final_subset['dim_diff'] = abs(final_subset['min_dim'] - user_min) + abs(final_subset['max_dim'] - user_max)
+            subset_by_thick = df[df['Thick'] == uT]
+            if subset_by_thick.empty:
+                st.warning("В базе данных нет камер с выбранной толщиной панели.")
+                st.button("Начать сначала", on_click=restart)
+                st.stop()
 
-        rOpt = final_subset.sort_values(by=['dim_diff', 'Volume_Intermal']).head(1)
-
-        rEco = pd.DataFrame()
-        rPre = pd.DataFrame()
-
-        if not rOpt.empty:
-            opt_vol = rOpt['Volume_Intermal'].values[0]
-            
-            eco_choices = final_subset[final_subset['Volume_Intermal'] < opt_vol]
-            if not eco_choices.empty:
-                rEco = eco_choices.sort_values(by='dim_diff').head(1)
+            all_heights = subset_by_thick['Height_Ext'].unique()
+            if len(all_heights) > 0:
+                nearest_h = all_heights[(np.abs(all_heights - uH)).argmin()]
             else:
-                rEco = rOpt  
+                nearest_h = uH
                 
-            pre_choices = final_subset[final_subset['Volume_Intermal'] > opt_vol]
-            if not pre_choices.empty:
-                rPre = pre_choices.sort_values(by='dim_diff').head(1)
+            final_subset = subset_by_thick[subset_by_thick['Height_Ext'] == nearest_h].copy()
+            
+            user_min, user_max = min(uL, uW), max(uL, uW)
+            final_subset['min_dim'] = final_subset[['Length_Ext', 'Width_Ext']].min(axis=1)
+            final_subset['max_dim'] = final_subset[['Length_Ext', 'Width_Ext']].max(axis=1)
+            final_subset['dim_diff'] = abs(final_subset['min_dim'] - user_min) + abs(final_subset['max_dim'] - user_max)
 
-        st.caption(f"Расчет выполнен для ближайшей стандартной высоты сэндвич-панели: {nearest_h:.2f} м")
-        st.write("")
-        
-        cols_results = st.columns(3)
-        titles, colors = ["ЭКОНОМ", "ОПТИМАЛЬНО", "КОМФОРТ"], ["#fffde7", "#f1f8e9", "#e3f2fd"]
-        
-        for i, row in enumerate([rEco, rOpt, rPre]):
-            with cols_results[i]:
-                if not row.empty:
-                    price_str = f"{int(row['Price_RRC'].values[0]):,}".replace(",", " ")
-                    
-                    st.markdown(f'''
-                        <a href="#order-form" style="text-decoration: none; display: block; color: inherit;">
-                            <div class="option-card" style="background-color: {colors[i]};">
-                                <div>
-                                    <div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
-                                        <h3 style="color: #333; margin:0; line-height: 1.1;">{titles[i]}</h3>
-                                    </div>
-                                    <div class="dim-tag">{row['Height_Ext'].values[0]:.2f} x {row['Length_Ext'].values[0]:.2f} x {row['Width_Ext'].values[0]:.2f} м</div>
-                                    <p style="margin: 15px 0; color: #555;">Полезный объем:<br><b style="font-size: 20px; color: #333;">{row['Volume_Intermal'].values[0]:.2f} м³</b></p>
-                                </div>
-                                <div>
-                                    <div class="price-tag">{price_str} ₽</div>
-                                    <p style="font-size: 12px; color: #888; margin-top: 10px;">*Рекомендованная розница</p>
-                                    <p style="font-size: 13px; color: #e65100; margin-top: 10px; font-weight: bold;">👇 Кликните, чтобы заполнить заявку</p>
-                                </div>
-                            </div>
-                        </a>
-                    ''', unsafe_allow_html=True)
+            rOpt = final_subset.sort_values(by=['dim_diff', 'Volume_Intermal']).head(1)
+
+            if not rOpt.empty:
+                opt_vol = rOpt['Volume_Intermal'].values[0]
+                
+                eco_choices = final_subset[final_subset['Volume_Intermal'] < opt_vol]
+                if not eco_choices.empty:
+                    rEco = eco_choices.sort_values(by='dim_diff').head(1)
                 else:
-                    st.markdown(f'<div class="option-card" style="background-color: {colors[i]}; opacity: 0.6;"><div><div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;"><h3 style="color: #333; margin:0;">{titles[i]}</h3></div></div><div><p style="color: #777;">Вариант не найден</p></div></div>', unsafe_allow_html=True)
+                    rEco = rOpt  
+                    
+                pre_choices = final_subset[final_subset['Volume_Intermal'] > opt_vol]
+                if not pre_choices.empty:
+                    rPre = pre_choices.sort_values(by='dim_diff').head(1)
 
-        st.write("---")
+            st.caption(f"Расчет выполнен для ближайшей стандартной высоты сэндвич-панели: {nearest_h:.2f} м")
+            st.write("")
+            
+            cols_results = st.columns(3)
+            titles, colors = ["ЭКОНОМ", "ОПТИМАЛЬНО", "КОМФОРТ"], ["#fffde7", "#f1f8e9", "#e3f2fd"]
+            
+            for i, row in enumerate([rEco, rOpt, rPre]):
+                with cols_results[i]:
+                    if not row.empty:
+                        price_str = f"{int(row['Price_RRC'].values[0]):,}".replace(",", " ")
+                        
+                        st.markdown(f'''
+                            <a href="#order-form" style="text-decoration: none; display: block; color: inherit;">
+                                <div class="option-card" style="background-color: {colors[i]};">
+                                    <div>
+                                        <div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;">
+                                            <h3 style="color: #333; margin:0; line-height: 1.1;">{titles[i]}</h3>
+                                        </div>
+                                        <div class="dim-tag">{row['Height_Ext'].values[0]:.2f} x {row['Length_Ext'].values[0]:.2f} x {row['Width_Ext'].values[0]:.2f} м</div>
+                                        <p style="margin: 15px 0; color: #555;">Полезный объем:<br><b style="font-size: 20px; color: #333;">{row['Volume_Intermal'].values[0]:.2f} м³</b></p>
+                                    </div>
+                                    <div>
+                                        <div class="price-tag">{price_str} ₽</div>
+                                        <p style="font-size: 12px; color: #888; margin-top: 10px;">*Рекомендованная розница</p>
+                                        <p style="font-size: 13px; color: #e65100; margin-top: 10px; font-weight: bold;">👇 Кликните, чтобы заполнить заявку</p>
+                                    </div>
+                                </div>
+                            </a>
+                        ''', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<div class="option-card" style="background-color: {colors[i]}; opacity: 0.6;"><div><div style="height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px;"><h3 style="color: #333; margin:0;">{titles[i]}</h3></div></div><div><p style="color: #777;">Вариант не найден</p></div></div>', unsafe_allow_html=True)
+
+            st.write("---")
+        else:
+            st.warning("⚠️ Выбрана нестандартная форма помещения. Для точного расчета стоимости нам необходим ваш чертеж или схема.")
+            st.write("---")
         
         # Невидимый якорь, куда будет скроллить страница
         st.markdown('<div id="order-form"></div>', unsafe_allow_html=True)
         
         st.markdown("""
             <div style="background-color: #fff3e0; border-left: 10px solid #ff9800; padding: 25px; border-radius: 12px; margin: 10px 0 30px 0;">
-                <h3 style="color: #e65100; margin-top: 0; font-size: 22px;">💰 Хотите цену ниже РРЦ?</h3>
-                <p style="font-size: 16px; color: #333; line-height: 1.5; margin-bottom: 0;">Указанные цены - базовые. Оставьте заявку ниже: инженер пересчитает смету с учетом <b>максимальной скидки завода</b> и подготовит официальное КП за 15 минут.</p>
+                <h3 style="color: #e65100; margin-top: 0; font-size: 22px;">💰 Индивидуальный расчет и скидка</h3>
+                <p style="font-size: 16px; color: #333; line-height: 1.5; margin-bottom: 0;">Оставьте заявку ниже: инженер сделает точный расчет по вашим параметрам с учетом <b>максимальной скидки завода</b> и подготовит официальное КП за 15 минут.</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -315,7 +328,7 @@ elif st.session_state.step == 4:
             
             st.write("")
             f_comment = st.text_area("Дополнительные комментарии или пожелания (необязательно)", placeholder="Например: нужен монтаж, особые требования к двери...")
-            f_files = st.file_uploader("Прикрепить чертеж помещения или ТЗ (необязательно)", accept_multiple_files=True)
+            f_files = st.file_uploader("Прикрепить чертеж помещения или ТЗ (обязательно для нестандартных)", accept_multiple_files=True)
             st.write("")
             
             st.session_state.answers['temp_name'] = f_name if f_name else "уважаемый клиент"
@@ -329,17 +342,28 @@ elif st.session_state.step == 4:
                     prod_list = ans.get('product', [])
                     prod_str = ", ".join(prod_list) if prod_list else "Не указано"
                     
-                    # Собираем данные из предложенных карточек
-                    variants_mail = ""
-                    v_titles = ["ЭКОНОМ", "ОПТИМАЛЬНО", "КОМФОРТ"]
-                    for idx, v_row in enumerate([rEco, rOpt, rPre]):
-                        if not v_row.empty:
-                            v_price = f"{int(v_row['Price_RRC'].values[0]):,}".replace(",", " ")
-                            variants_mail += f"{v_titles[idx]}:\nГабариты: {v_row['Height_Ext'].values[0]:.2f} x {v_row['Length_Ext'].values[0]:.2f} x {v_row['Width_Ext'].values[0]:.2f} м | Объем: {v_row['Volume_Intermal'].values[0]:.2f} м³ | РРЦ: {v_price} руб.\n\n"
-                        else:
-                            variants_mail += f"{v_titles[idx]}: Вариант не найден\n\n"
+                    # Маркеры для менеджера
+                    manager_flags = []
+                    if "Цветы" in prod_list:
+                        manager_flags.append("❗️ ВНИМАНИЕ: Цветочная камера (предложить стеклянный фронт).")
+                    if ans.get('custom_shape', False):
+                        manager_flags.append("❗️ ВНИМАНИЕ: Нестандартная форма помещения (расчет по ТЗ/чертежу).")
                     
-                    mail_body = f"НОВАЯ ЗАЯВКА ИЗ КОНСТРУКТОРА КАМЕР\n\n--- КОНТАКТЫ ---\nИмя/Компания: {f_name}\nТелефон: {f_phone}\nEmail: {f_email}\nГород: {f_city}\n\n--- ЗАПРОС КЛИЕНТА ---\nНазначение: {prod_str}\nЗапрошенные габариты: {ans.get('h')} x {ans.get('l')} x {ans.get('w')} м\nТолщина: {ans.get('thick')} мм\nПол: {ans.get('floor')}\n\n--- ПРЕДЛОЖЕННЫЕ АВТОМАТОМ ВАРИАНТЫ ---\n{variants_mail}--- КОММЕНТАРИЙ ---\n{f_comment if f_comment else 'Нет комментариев'}"
+                    flags_str = "\n".join(manager_flags) + "\n\n" if manager_flags else ""
+                    
+                    variants_mail = ""
+                    if not ans.get('custom_shape', False):
+                        v_titles = ["ЭКОНОМ", "ОПТИМАЛЬНО", "КОМФОРТ"]
+                        for idx, v_row in enumerate([rEco, rOpt, rPre]):
+                            if not v_row.empty:
+                                v_price = f"{int(v_row['Price_RRC'].values[0]):,}".replace(",", " ")
+                                variants_mail += f"{v_titles[idx]}:\nГабариты: {v_row['Height_Ext'].values[0]:.2f} x {v_row['Length_Ext'].values[0]:.2f} x {v_row['Width_Ext'].values[0]:.2f} м | Объем: {v_row['Volume_Intermal'].values[0]:.2f} м³ | РРЦ: {v_price} руб.\n\n"
+                            else:
+                                variants_mail += f"{v_titles[idx]}: Вариант не найден\n\n"
+                    else:
+                        variants_mail = "Форма: Нестандартная. Требуется ручной расчет инженера.\n\n"
+                    
+                    mail_body = f"НОВАЯ ЗАЯВКА ИЗ КОНСТРУКТОРА КАМЕР\n\n{flags_str}--- КОНТАКТЫ ---\nИмя/Компания: {f_name}\nТелефон: {f_phone}\nEmail: {f_email}\nГород: {f_city}\n\n--- ЗАПРОС КЛИЕНТА ---\nНазначение: {prod_str}\nЗапрошенные габариты: {ans.get('h')} x {ans.get('l')} x {ans.get('w')} м\nТолщина: {ans.get('thick')} мм\nПол: {ans.get('floor')}\n\n--- ПРЕДЛОЖЕННЫЕ АВТОМАТОМ ВАРИАНТЫ ---\n{variants_mail}--- КОММЕНТАРИЙ ---\n{f_comment if f_comment else 'Нет комментариев'}"
                     
                     msg = MIMEMultipart()
                     msg['Subject'] = f"🔔 Заявка Ариада (Конструктор): {f_name} ({f_city})"
