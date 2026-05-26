@@ -176,7 +176,7 @@ elif st.session_state.step == 2:
 elif st.session_state.step == 3:
     render_header(3, "Технические предпочтения")
     
-    st.markdown('<img src="https://s10.iimage.su/s/24/gG7hXWUxHfd5hhz7uLfty8MoX0DAl7VKAwB4r70OP.png" style="max-height: 250px; max-width: 100%; display: block; margin: 0 auto 10px auto; border-radius: 12px;">', unsafe_allow_html=True)
+    st.markdown('<img src="https://i.postimg.cc/KzbM30pT/sippaz-izm-2.png" style="max-height: 250px; max-width: 100%; display: block; margin: 0 auto 10px auto; border-radius: 12px;">', unsafe_allow_html=True)
     st.caption("Энергоэффективные панели собственного производства «Ариада»")
     st.write("")
     
